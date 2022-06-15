@@ -19,10 +19,12 @@ This project is achieved with Python, and Python library ``pygame``. Part of the
 Run the program with:
 
 ```Python
-python main.py
+python main.py [-m] [-z]
 ```
 
-And you should get a window showing the bars indicating throttle position. This project is designed for Logitech X56 throttle, so if you’re using any other throttle device make sure to change the searching criteria and the axis number of the device.
+The ``-m`` is for center-based throttle profiles, and should be followed by a float number to indicate the center position. Some games have two-way throttle, mostly space flight sim or other games with both forward and reverse movement ability. When using this parameter, the profile should be set up **the same way** as normal throttle profile, **do not use negative number** to represent the reversing part. The ``-z`` is for normal profiles. Either one of these parameters must be set.
+
+After running you should get a window showing the bars indicating throttle position. This project is designed for Logitech X56 throttle, so if you’re using any other throttle device make sure to change the searching criteria and the axis number of the device.
 
 If you hope to use it in VR, there’re tools like ``Desktop+`` that can show a window from desktop at somewhere you designate. Refer to their guides and manuals for further details on how to do so.
 
@@ -43,6 +45,7 @@ L idle 0.15 255 0 0
 ## Version history
 
 - V1.0: Program is runnable, no exception handling ability. User is required to ensure all input is correct.
+- V2.0: Added center-based indication for two-way throttle control.
 
 ## Future plans
 
