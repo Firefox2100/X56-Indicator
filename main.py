@@ -24,7 +24,7 @@ class ThrottleBar:
         self.y = 10
 
     def draw_empty_bar(self, window, profile, is_left):
-        pygame.draw.rect(window, BLACK, (self.x, self.y, self.width, self.height))
+        # pygame.draw.rect(window, BLACK, (self.x, self.y, self.width, self.height))
         current_y = self.y + self.height
         for p in profile:
             new_y = current_y - int(self.height * p.percentage)
@@ -43,30 +43,21 @@ class ThrottleBar:
             current_y = new_y
 
     def draw_bar(self, window, profile, value, is_left):
+        self.draw_full_bar(window, profile)
+        pygame.draw.rect(window, BLACK, (self.x, self.y, self.width, self.height * (1 - value)))
         self.draw_empty_bar(window, profile, is_left)
-        current_y = self.y + self.height
-        current_p = 0.0
-        for p in profile:
-            if value > current_p + p.percentage:
-                new_y = current_y - int(self.height * p.percentage)
-                pygame.draw.rect(window, (p.R, p.G, p.B), (self.x, new_y, self.width, current_y - new_y))
-                current_p = current_p + p.percentage
-                current_y = new_y
-            else:
-                new_y = current_y - int(self.height * (value - current_p))
-                pygame.draw.rect(window, (p.R, p.G, p.B), (self.x, new_y, self.width, current_y - new_y))
-                break
 
     def draw_bar_middle(self, window, profile, value, percentage, is_left):
         self.draw_full_bar(window, profile)
         if value > percentage:
-            p_y = self.y - self.height * (1 - percentage)
-            pygame.draw.rect(window, GREY, (self.x, p_y, self.width, self.height * percentage))
-            pygame.draw.rect(window, GREY, (self.x, self.y, self.width, self.height * (1 - value)))
+            p_y = self.y + self.height * (1 - percentage)
+            pygame.draw.rect(window, BLACK, (self.x, p_y, self.width, self.height * percentage))
+            pygame.draw.rect(window, BLACK, (self.x, self.y, self.width, self.height * (1 - value)))
         else:
-            v_y = self.y - self.height * (1 - value)
-            pygame.draw.rect(window, GREY, (self.x, v_y, self.width, self.height * value))
-            pygame.draw.rect(window, GREY, (self.x, self.y, self.width, self.height * (1 - percentage)))
+            v_y = self.y + self.height * (1 - value)
+            pygame.draw.rect(window, BLACK, (self.x, v_y, self.width, self.height * value + 1))
+            pygame.draw.rect(window, BLACK, (self.x, self.y, self.width, self.height * (1 - percentage)))
+        self.draw_empty_bar(window, profile, is_left)
 
 
 class Profile:
@@ -88,13 +79,17 @@ class Profile:
 
 # Parse the parameter
 if len(sys.argv) == 1:
-    print('Error: Not enough parameters')
+    ex = Exception('Error: Not enough parameters')
+    raise ex
+
+is_center = False
+percentage = 0.0
 
 for i in range(1, len(sys.argv)):
     if sys.argv[i] == '-m':
         is_center = True
         i += 1
-        percentage = sys.argv[i]
+        percentage = float(sys.argv[i])
     elif sys.argv[i] == '-z':
         is_center = False
 
