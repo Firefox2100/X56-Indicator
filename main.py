@@ -1,5 +1,6 @@
 import pygame
 import sys
+import playsound
 
 BLACK = (0, 0, 0)
 GREY = (150, 150, 150)
@@ -77,6 +78,126 @@ class Profile:
         self.B = float(parameters[5])
 
 
+class Detent:
+    def __init__(self, p, t):
+        self.position = p
+        self.type = t
+        self.p_triggered = False
+        self.n_triggered = False
+
+    def enter(self):
+        playsound.playsound('enter.wav')
+        # print('Entering')
+
+    def leave(self):
+        playsound.playsound('leave.wav')
+        # print('Leaving')
+
+    def vibrate(self, v):
+        if self.type == 1:
+            # Positive detent
+            if self.position - 0.02 < v < self.position:
+                if not self.p_triggered:
+                    # In range and not triggered
+                    if self.n_triggered:
+                        # Pulling back
+                        self.leave()
+                        self.n_triggered = False
+                    else:
+                        # Pushing forward
+                        self.enter()
+                    self.p_triggered = True
+                else:
+                    # Already triggered
+                    pass
+            elif self.position < v < self.position + 0.02:
+                if not self.n_triggered:
+                    # In range and not triggered
+                    if self.p_triggered:
+                        # Pushing forward
+                        self.leave()
+                        self.p_triggered = False
+                    else:
+                        # Pulling back, since it's positive it shouldn't click
+                        pass
+                    self.n_triggered = True
+                else:
+                    # Already triggered
+                    pass
+            else:
+                # Out of detent range, reset
+                self.p_triggered = False
+                self.n_triggered = False
+        elif self.type == -1:
+            # Negative detent
+            if self.position - 0.02 < v < self.position:
+                if not self.p_triggered:
+                    # In range and not triggered
+                    if self.n_triggered:
+                        # Pulling back
+                        self.leave()
+                        self.n_triggered = False
+                    else:
+                        # Pushing forward, since it's negative it shouldn't click
+                        pass
+                    self.p_triggered = True
+                else:
+                    # Already triggered
+                    pass
+            elif self.position < v < self.position + 0.02:
+                if not self.n_triggered:
+                    # In range and not triggered
+                    if self.p_triggered:
+                        # Pushing forward
+                        self.leave()
+                        self.p_triggered = False
+                    else:
+                        # Pulling back
+                        self.enter()
+                    self.n_triggered = True
+                else:
+                    # Already triggered
+                    pass
+            else:
+                # Out of detent range, reset
+                self.p_triggered = False
+                self.n_triggered = False
+        else:
+            # Normal detent
+            if self.position - 0.02 < v < self.position:
+                if not self.p_triggered:
+                    # In range and not triggered
+                    if self.n_triggered:
+                        # Pulling back
+                        self.leave()
+                        self.n_triggered = False
+                    else:
+                        # Pushing forward
+                        self.enter()
+                    self.p_triggered = True
+                else:
+                    # Already triggered
+                    pass
+            elif self.position < v < self.position + 0.02:
+                if not self.n_triggered:
+                    # In range and not triggered
+                    if self.p_triggered:
+                        # Pushing forward
+                        self.leave()
+                        self.p_triggered = False
+                    else:
+                        # Pulling back
+                        self.enter()
+                    self.n_triggered = True
+                else:
+                    # Already triggered
+                    pass
+            else:
+                # Out of detent range, reset
+                self.p_triggered = False
+                self.n_triggered = False
+
+
 # Parse the parameter
 if len(sys.argv) == 1:
     ex = Exception('Error: Not enough parameters')
@@ -99,14 +220,40 @@ with open('profile.txt') as profile_in:
 
 profile_L = []
 profile_R = []
+detent_L = []
+detent_R = []
+
+sum_L = 0
+sum_R = 0
 
 for line in lines:
     temp = Profile()
     temp.string_to_profile(line)
+    temp_detent = Detent(0, 0)
+
+    detent_flag = True
+
+    if line[1] == 'P':
+        temp_detent = Detent(temp.percentage, 1)
+    elif line[1] == 'N':
+        temp_detent = Detent(temp.percentage, -1)
+    elif line[1] == 'D':
+        temp_detent = Detent(temp.percentage, 0)
+    else:
+        detent_flag = False
+
     if line[0] == 'L':
         profile_L.append(temp)
+        if detent_flag:
+            temp_detent.position += sum_L
+            detent_L.append(temp_detent)
+        sum_L += temp.percentage
     else:
         profile_R.append(temp)
+        if detent_flag:
+            temp_detent.position += sum_R
+            detent_R.append(temp_detent)
+        sum_R += temp.percentage
 
 # Screen initialize
 pygame.init()
@@ -136,6 +283,10 @@ right_bar = ThrottleBar()
 right_bar.x = 90
 right_bar.y = 30
 
+detent_flag = False
+if detent_L or detent_R:
+    detent_flag = True
+
 while not done:
     # Quit when user close the window
     for event in pygame.event.get():
@@ -156,6 +307,16 @@ while not done:
     else:
         left_bar.draw_bar(screen, profile_L, axis_L, True)
         right_bar.draw_bar(screen, profile_R, axis_R, False)
+
+    if detent_flag:
+        if abs(axis_L - axis_R) < 0.05:
+            for d in detent_L:
+                d.vibrate(axis_L)
+        else:
+            for d in detent_L:
+                d.vibrate(axis_L)
+            for d in detent_R:
+                d.vibrate(axis_R)
 
     # Refresh the screen
     pygame.display.flip()
